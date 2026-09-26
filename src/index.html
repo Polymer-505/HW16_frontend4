@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="uk">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AJAX Users</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+
+  <body>
+    <main class="container">
+      <header class="header">
+        <div>
+          <p class="eyebrow">AJAX Practice</p>
+          <h1>Users</h1>
+        </div>
+        <button class="button button--secondary" id="refresh" type="button">
+          Refresh
+        </button>
+      </header>
+      <section class="create-user">
+        <h2>Add user</h2>
+        <form id="userForm">
+          <div class="form-group">
+            <label for="name"> Name </label>
+            <input
+              id="name"
+              name="name"
+              type="text"
+              placeholder="John Doe"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="email"> Email </label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              placeholder="john@gmail.com"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="age"> Age </label>
+            <input
+              id="age"
+              name="age"
+              type="number"
+              placeholder="25"
+              min="1"
+              required
+            />
+          </div>
+          <button class="button" type="submit">Add user</button>
+        </form>
+      </section>
+      <section class="users">
+        <div class="users__header">
+          <h2>Users list</h2>
+          <p id="loader" hidden>Loading...</p>
+        </div>
+        <p class="error" id="error" hidden></p>
+        <div class="users__list" id="usersList"></div>
+      </section>
+    </main>
+
+    <div class="backdrop is__hidden" id="modalBackdrop" data-modal>
+      <div class="modal">
+        <button class="close__button" id="closeModalBtn" type="button">
+          &#x2715;
+        </button>
+        <h2 class="form__name">Edit User</h2>
+
+        <form id="editUserForm" class="form-modal">
+          <input type="hidden" id="editUserId" />
+
+          <div class="form-group">
+            <label for="editName">Name</label>
+            <input id="editName" name="name" type="text" required />
+          </div>
+
+          <div class="form-group">
+            <label for="editEmail">Email</label>
+            <input id="editEmail" name="email" type="email" required />
+          </div>
+
+          <div class="form-group">
+            <label for="editAge">Age</label>
+            <input id="editAge" name="age" type="number" min="1" required />
+          </div>
+
+          <p class="error" id="editModalError" hidden></p>
+
+          <div class="modal__actions">
+            <button
+              class="button button--secondary"
+              id="cancelEditBtn"
+              type="button"
+            >
+              Cancel
+            </button>
+            <button class="button" type="submit">Save</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script src="./script.js" type="module"></script>
+  </body>
+</html>
