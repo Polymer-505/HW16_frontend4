@@ -1,6 +1,10 @@
 import userTemplate from "./templates/user.hbs";
 
-const API_URL = "https://6aaed44c606bd915d11112c2.mockapi.io/api/users";
+const API = "https://6aaed44c606bd915d11112c2.mockapi.io/api/users";
+
+let page = 1;
+let limit = 5;
+let totalPages = 0;
 
 const refs = {
   userList: document.getElementById("usersList"),
@@ -15,12 +19,32 @@ const refs = {
   editEmailInput: document.getElementById("editEmail"),
   editAgeInput: document.getElementById("editAge"),
   editModalError: document.getElementById("editModalError"),
+  pagContainer: document.getElementById("pages"),
+  prevBtn: document.getElementById("prev"),
+  nextBtn: document.getElementById("next"),
 };
 
 let initialUserData = null;
 
+refs.userForm.addEventListener("submit", submitUserForm);
+refs.closeModalBtn.addEventListener("click", closeModal);
+refs.cancelEditBtn.addEventListener("click", closeModal);
+refs.editUserForm.addEventListener("submit", onSaveUser);
+refs.userList.addEventListener("click", (event) => {
+  const target = event.target;
+
+  if (target.classList.contains("delete-user")) {
+    const userId = target.dataset.id;
+    deleteUser(userId);
+  }
+
+  if (target.classList.contains("edit-user")) {
+    openEditModal(target.dataset);
+  }
+});
+
 function getAllUsers() {
-  fetch(API_URL)
+  fetch(API)
     .then((response) => {
       if (!response.ok) {
         throw new Error(`Response status: ${response.status}`);
@@ -31,6 +55,45 @@ function getAllUsers() {
     .catch((err) => console.error("Error loading users:", err));
 }
 
+function fetchProducts() {
+  fetch(`${API}?page=${page}&limit=${limit}`)
+    .then((response) => {
+      return response.json();
+    })
+    .then((data) => renderUsers(data));
+}
+
+function getAllProducts() {
+  fetch(API)
+    .then((response) => {
+      return response.json();
+    })
+    .then((data) => {
+      totalPages = Math.ceil(data.length / limit);
+      renderPagination();
+    });
+}
+
+function renderPagination() {
+  Array.from({ length: totalPages }).forEach((_, idx) => {
+    refs.pagContainer.insertAdjacentHTML(
+      "beforeend",
+      `<button data-page="${idx + 1}">${idx + 1}</button>`,
+    );
+  });
+
+  const allPag = refs.pagContainer.querySelectorAll("button");
+  const activePag = Object.values(allPag).find(
+    (pag) => Number(pag.dataset.page) === page,
+  );
+
+  activePag.classList.add("active");
+}
+
+if (refs.refreshBtn) {
+  refs.refreshBtn.addEventListener("click", getAllUsers);
+}
+
 function renderUsers(users) {
   refs.userList.innerHTML = "";
   users.forEach((user) => {
@@ -39,14 +102,66 @@ function renderUsers(users) {
   });
 }
 
+refs.pagContainer.addEventListener("click", (event) => {
+  event.preventDefault();
+
+  const target = event.target;
+  if (target.tagName !== "BUTTON") {
+    return;
+  }
+  page = Number(target.dataset.page);
+
+  const allPag = refs.pagContainer.querySelectorAll("button");
+  allPag.forEach((pag) => pag.classList.remove("active"));
+
+  const activePag = Object.values(allPag).find(
+    (pag) => Number(pag.dataset.page) === page,
+  );
+
+  activePag.classList.add("active");
+
+  fetchProducts();
+});
+
+refs.prevBtn.addEventListener("click", () => {
+  if (page > 1) {
+    page--;
+
+    const allPag = refs.pagContainer.querySelectorAll("button");
+    allPag.forEach((pag) => pag.classList.remove("active"));
+
+    const activePag = Object.values(allPag).find(
+      (pag) => Number(pag.dataset.page) === page,
+    );
+
+    activePag.classList.add("active");
+
+    fetchProducts();
+  }
+});
+
+refs.nextBtn.addEventListener("click", () => {
+  if (page < totalPages) {
+    page++;
+
+    const allPag = refs.pagContainer.querySelectorAll("button");
+    allPag.forEach((pag) => pag.classList.remove("active"));
+
+    const activePag = Object.values(allPag).find(
+      (pag) => Number(pag.dataset.page) === page,
+    );
+
+    activePag.classList.add("active");
+
+    fetchProducts();
+  }
+});
+
 getAllUsers();
+fetchProducts();
+getAllProducts();
 
-if (refs.refreshBtn) {
-  refs.refreshBtn.addEventListener("click", getAllUsers);
-}
-
-refs.userForm.addEventListener("submit", submitUserForm);
-
+// Modal
 function submitUserForm(e) {
   e.preventDefault();
   const data = new FormData(userForm);
@@ -55,7 +170,7 @@ function submitUserForm(e) {
 }
 
 function createUser(data) {
-  fetch(API_URL, {
+  fetch(API, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -75,21 +190,35 @@ function createUser(data) {
     .catch((err) => console.error("Error creating user:", err));
 }
 
-refs.userList.addEventListener("click", (event) => {
-  const target = event.target;
+function updateUser(id, data) {
+  editModalError.hidden = true;
 
-  if (target.classList.contains("delete-user")) {
-    const userId = target.dataset.id;
-    deleteUser(userId);
-  }
-
-  if (target.classList.contains("edit-user")) {
-    openEditModal(target.dataset);
-  }
-});
+  fetch(`${API}/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+  })
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error("Не вдалося оновити користувача.");
+      }
+      return response.json();
+    })
+    .then(() => {
+      closeModal();
+      getAllUsers();
+    })
+    .catch((error) => {
+      refs.editModalError.textContent =
+        error.message || "Не вдалося оновити користувача.";
+      refs.editModalError.hidden = false;
+    });
+}
 
 function deleteUser(id) {
-  fetch(`${API_URL}/${id}`, {
+  fetch(`${API}/${id}`, {
     method: "DELETE",
   })
     .then((response) => {
@@ -130,11 +259,6 @@ function openEditModal(userData) {
   openModal();
 }
 
-refs.closeModalBtn.addEventListener("click", closeModal);
-refs.cancelEditBtn.addEventListener("click", closeModal);
-
-refs.editUserForm.addEventListener("submit", onSaveUser);
-
 function onSaveUser(e) {
   e.preventDefault();
 
@@ -156,31 +280,4 @@ function onSaveUser(e) {
   }
 
   updateUser(userId, updatedData);
-}
-
-function updateUser(id, data) {
-  editModalError.hidden = true;
-
-  fetch(`${API_URL}/${id}`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(data),
-  })
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error("Не вдалося оновити користувача.");
-      }
-      return response.json();
-    })
-    .then(() => {
-      closeModal();
-      getAllUsers();
-    })
-    .catch((error) => {
-      refs.editModalError.textContent =
-        error.message || "Не вдалося оновити користувача.";
-      refs.editModalError.hidden = false;
-    });
 }
