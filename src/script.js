@@ -43,37 +43,40 @@ refs.userList.addEventListener("click", (event) => {
   }
 });
 
-function getAllUsers() {
-  fetch(API)
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error(`Response status: ${response.status}`);
-      }
-      return response.json();
-    })
-    .then((users) => renderUsers(users))
-    .catch((err) => console.error("Error loading users:", err));
+async function getAllUsers() {
+  try {
+    const response = await fetch(API);
+    if (!response.ok) {
+      throw new Error(`Response status: ${response.status}`);
+    }
+    const data = await response.json();
+
+    renderUsers(data);
+  } catch (error) {
+    console.log(error);
+  }
 }
 
-function fetchProducts() {
-  fetch(`${API}?page=${page}&limit=${limit}`)
-    .then((response) => {
-      return response.json();
-    })
-    .then((data) => renderUsers(data));
+async function fetchProducts() {
+  try {
+    const response = await fetch(`${API}?page=${page}&limit=${limit}`);
+    const data = await response.json();
+    renderUsers(data);
+  } catch (error) {
+    console.log(error);
+  }
 }
 
-function getAllProducts() {
-  fetch(API)
-    .then((response) => {
-      return response.json();
-    })
-    .then((data) => {
-      totalPages = Math.ceil(data.length / limit);
-      renderPagination();
-    });
+async function getAllProducts() {
+  try {
+    const response = await fetch(API);
+    const data = await response.json();
+    totalPages = Math.ceil(data.length / limit);
+    renderPagination();
+  } catch (error) {
+    console.log(error);
+  }
 }
-
 function renderPagination() {
   Array.from({ length: totalPages }).forEach((_, idx) => {
     refs.pagContainer.insertAdjacentHTML(
@@ -169,65 +172,65 @@ function submitUserForm(e) {
   createUser(formData);
 }
 
-function createUser(data) {
-  fetch(API, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(data),
-  })
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error(`Status: ${response.status}`);
-      }
-      return response.json();
-    })
-    .then(() => {
-      refs.userForm.reset();
-      getAllUsers();
-    })
-    .catch((err) => console.error("Error creating user:", err));
-}
-
-function updateUser(id, data) {
-  editModalError.hidden = true;
-
-  fetch(`${API}/${id}`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(data),
-  })
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error("Не вдалося оновити користувача.");
-      }
-      return response.json();
-    })
-    .then(() => {
-      closeModal();
-      getAllUsers();
-    })
-    .catch((error) => {
-      refs.editModalError.textContent =
-        error.message || "Не вдалося оновити користувача.";
-      refs.editModalError.hidden = false;
+async function createUser(data) {
+  try {
+    const response = await fetch(API, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
     });
+    if (!response.ok) {
+      throw new Error(`Status: ${response.status}`);
+    }
+    const data = await response.json();
+
+    refs.userForm.reset();
+    getAllUsers();
+  } catch (error) {
+    console.log(error);
+  }
 }
 
-function deleteUser(id) {
-  fetch(`${API}/${id}`, {
-    method: "DELETE",
-  })
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error(`Status: ${response.status}`);
-      }
-    })
-    .then(() => getAllUsers())
-    .catch((err) => console.error("Error deleting user:", err));
+async function updateUser(id, data) {
+  try {
+    editModalError.hidden = true;
+
+    const response = await fetch(`${API}/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      throw new Error("Не вдалося оновити користувача.");
+    }
+    const data = await response.json();
+
+    closeModal();
+    getAllUsers();
+  } catch (error) {
+    refs.editModalError.textContent =
+      error.message || "Не вдалося оновити користувача.";
+    refs.editModalError.hidden = false;
+  }
+}
+
+async function deleteUser(id) {
+  try {
+    const response = await fetch(`${API}/${id}`, {
+      method: "DELETE",
+    });
+    if (!response.ok) {
+      throw new Error(`Status: ${response.status}`);
+    }
+    getAllUsers();
+  } catch (error) {
+    console.error("Error deleting user:", error);
+  }
 }
 
 function openModal() {
