@@ -10,6 +10,7 @@ const refs = {
   userList: document.getElementById("usersList"),
   userForm: document.getElementById("userForm"),
   refreshBtn: document.getElementById("refresh"),
+  loadTasksBtn: document.getElementById("loadTasksBtn"),
   modal: document.getElementById("modalBackdrop"),
   closeModalBtn: document.getElementById("closeModalBtn"),
   cancelEditBtn: document.getElementById("cancelEditBtn"),
@@ -95,6 +96,42 @@ function renderPagination() {
 
 if (refs.refreshBtn) {
   refs.refreshBtn.addEventListener("click", getAllUsers);
+}
+
+if (refs.loadTasksBtn) {
+  refs.loadTasksBtn.addEventListener("click", fetchUsersWithTasks);
+}
+
+async function fetchUsersWithTasks() {
+  try {
+    const response = await fetch(API);
+    if (!response.ok) {
+      throw new Error(`Error: ${response.status}`);
+    }
+    const users = await response.json();
+
+    console.log(`Found ${users.length} users. Loading their tasks`);
+
+    const usersWithTasks = await Promise.all(
+      users.map(async (user) => {
+        const tasksResponse = await fetch(`${API}/${user.id}/tasks`);
+        let tasks = [];
+
+        if (tasksResponse.ok) {
+          tasks = await tasksResponse.json();
+        }
+
+        return {
+          ...user,
+          tasks,
+        };
+      }),
+    );
+
+    console.log(usersWithTasks);
+  } catch (error) {
+    console.error("Error", error);
+  }
 }
 
 function renderUsers(users) {
@@ -184,7 +221,6 @@ async function createUser(data) {
     if (!response.ok) {
       throw new Error(`Status: ${response.status}`);
     }
-    const data = await response.json();
 
     refs.userForm.reset();
     getAllUsers();
@@ -208,7 +244,6 @@ async function updateUser(id, data) {
     if (!response.ok) {
       throw new Error("Не вдалося оновити користувача.");
     }
-    const data = await response.json();
 
     closeModal();
     getAllUsers();
