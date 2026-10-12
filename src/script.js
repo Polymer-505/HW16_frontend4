@@ -10,7 +10,6 @@ const refs = {
   userList: document.getElementById("usersList"),
   userForm: document.getElementById("userForm"),
   refreshBtn: document.getElementById("refresh"),
-  loadTasksBtn: document.getElementById("loadTasksBtn"),
   modal: document.getElementById("modalBackdrop"),
   closeModalBtn: document.getElementById("closeModalBtn"),
   cancelEditBtn: document.getElementById("cancelEditBtn"),
@@ -41,6 +40,11 @@ refs.userList.addEventListener("click", (event) => {
 
   if (target.classList.contains("edit-user")) {
     openEditModal(target.dataset);
+  }
+
+  if (target.classList.contains("load-tasks")) {
+    const userId = target.dataset.id;
+    fetchUserTasks(userId);
   }
 });
 
@@ -98,39 +102,19 @@ if (refs.refreshBtn) {
   refs.refreshBtn.addEventListener("click", getAllUsers);
 }
 
-if (refs.loadTasksBtn) {
-  refs.loadTasksBtn.addEventListener("click", fetchUsersWithTasks);
-}
-
-async function fetchUsersWithTasks() {
+async function fetchUserTasks(userId) {
   try {
-    const response = await fetch(API);
-    if (!response.ok) {
-      throw new Error(`Error: ${response.status}`);
+    const tasksResponse = await fetch(`${API}/${userId}/tasks`);
+
+    if (!tasksResponse.ok) {
+      throw new Error(`Error: ${tasksResponse.status}`);
     }
-    const users = await response.json();
 
-    console.log(`Found ${users.length} users. Loading their tasks`);
+    const tasks = await tasksResponse.json();
 
-    const usersWithTasks = await Promise.all(
-      users.map(async (user) => {
-        const tasksResponse = await fetch(`${API}/${user.id}/tasks`);
-        let tasks = [];
-
-        if (tasksResponse.ok) {
-          tasks = await tasksResponse.json();
-        }
-
-        return {
-          ...user,
-          tasks,
-        };
-      }),
-    );
-
-    console.log(usersWithTasks);
+    console.log(`Task user ID ${userId}:`, tasks);
   } catch (error) {
-    console.error("Error", error);
+    console.error("Error:", error);
   }
 }
 
